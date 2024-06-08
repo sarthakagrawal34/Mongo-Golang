@@ -1,13 +1,16 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"mongo-golang/controllers"
 	"net/http"
+	"time"
 
 	"github.com/julienschmidt/httprouter"
-	"gopkg.in/mgo.v2"
+	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 func main() {
@@ -21,12 +24,15 @@ func main() {
 	log.Fatal(http.ListenAndServe("localhost:9000", r))
 }
 
-func getSession() *mgo.Session {
-	s, err := mgo.Dial("mongodb://localhost:27017")
-	fmt.Println(s)
-	if err != nil {
-		log.Fatalf("Failed to connect to MongoDB: %v", err)
-	}
-	defer s.Close()
-	return s
+func getSession() *mongo.Client {
+	uri := "mongodb://localhost:27017"
+	// Set up a context with timeout
+    ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+    defer cancel()
+	clientOptions := options.Client().ApplyURI(uri)
+    client, err := mongo.Connect(ctx, clientOptions)
+    if err != nil {
+        log.Fatalf("Failed to connect to MongoDB: %v", err)
+    }
+	return client
 }
